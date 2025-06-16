@@ -18,7 +18,7 @@ export default async function handler(request, response) {
   }
 
   // 準備呼叫 Google Gemini API
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
   const payload = {
     contents: [{
       role: "user",
