@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東京互動行程地圖 (Vercel 安全版)</title>
+    <style>
+        /* --- 樣式與之前相同，此處省略以保持簡潔 --- */
+        html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Arial', '微軟正黑體', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: calc(100% - 80px); }
+        #itinerary-column { flex: 1; min-width: 320px; padding: 20px; background-color: #f8f9fa; overflow-y: auto; border-right: 1px solid #dee2e6; }
+        #itinerary-column h2 { margin-top: 0; color: #c62828; border-bottom: 2px solid #c62828; padding-bottom: 10px; }
+        #itinerary-list { list-style-type: none; padding: 0; }
+        #itinerary-list li { background-color: #fff; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .item-content { flex-grow: 1; }
+        .item-title { font-weight: bold; font-size: 1.1em; color: #3f51b5; }
+        .item-desc { font-size: 0.95em; color: #555; margin-top: 5px; }
+        .item-desc .time { font-weight: bold; }
+        .item-desc .note { color: #c62828; font-weight: bold;}
+        .nav-link { flex-shrink: 0; margin-left: 15px; padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 20px; font-size: 0.9em; font-weight: bold; transition: background-color 0.2s; }
+        .nav-link:hover { background-color: #0056b3; }
+        #map-column { flex: 2; }
+        #map { height: 100%; width: 100%; background-color: #e0e0e0; }
+        #map-error { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.9); padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; color: #c0392b; z-index: 10; }
+        .info-window-nav-link { display: inline-block; margin-top: 8px; padding: 5px 10px; background-color: #007bff; color: white !important; text-decoration: none; border-radius: 5px; font-size: 0.9em; }
+        #day-selector { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); z-index: 5; display: flex; align-items: center; justify-content: center; padding: 0 10px; gap: 6px; overflow-x: auto; }
+        .day-btn { background-color: #f0f0f0; border: 2px solid transparent; border-radius: 20px; padding: 10px 18px; font-size: 1em; font-weight: 500; color: #555; cursor: pointer; transition: all 0.25s ease-in-out; white-space: nowrap; flex-shrink: 0; }
+        .day-btn:hover { background-color: #e0e0e0; transform: translateY(-2px); }
+        .day-btn.active { background-color: #3f51b5; color: white; border-color: #303f9f; box-shadow: 0 2px 8px rgba(63, 81, 181, 0.4); }
+        .ai-btn { background-color: #ffc107; color: #333; font-weight: bold; }
+        .ai-btn:hover { background-color: #ffca28; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4); }
+        .locate-btn { background-color: #17a2b8; color: white; font-weight: bold;}
+        .locate-btn:hover { background-color: #138496; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background: #fff; padding: 25px 30px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-close-btn { position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 1.5em; line-height: 1; cursor: pointer; color: #888; }
+        .modal-content h2 { margin-top: 0; color: #3f51b5; }
+        #ai-modal-body h3 { border-bottom: 2px solid #3f51b5; padding-bottom: 5px; margin-top: 20px; color: #333; }
+        #ai-modal-body p { line-height: 1.8; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 40px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) { .main-container { flex-direction: column; height: calc(100% - 120px); } #itinerary-column { flex: 1; border-right: none; border-bottom: 1px solid #dee2e6; } #map-column { flex: 1; } #day-selector { height: auto; min-height: 80px; flex-wrap: wrap; padding: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="itinerary-column"><h2 id="day-title"></h2><ul id="itinerary-list"></ul></div>
+        <div id="map-column"><div id="map"></div><div id="map-error"><p><strong>地圖載入失敗</strong></p><p>請確認您的 API 金鑰已正確設定。</p></div></div>
+    </div>
+    <div id="day-selector">
+        <button id="locate-me-btn" class="day-btn locate-btn">📍 定位</button>
+        <button id="ai-planner-btn" class="day-btn ai-btn">✨ AI 建議師</button>
+    </div>
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <h2>✨ AI 旅遊規劃師建議</h2>
+            <div id="ai-modal-body"></div>
+        </div>
+    </div>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDa_R9hUSHNV1VZ9hld-s8kYeouCxVscmE&callback=initMap&language=zh-TW&region=JP"></script>
+    <script>
+        // 全域變數
+        let map; let markers = []; let userLocationMarker = null; let currentDay = 1;
+        const itineraryData = { 1:[{lat:35.7733,lng:140.3864,title:'成田機場 (NRT)',description:'<span class="time">17:05</span> 抵達東京！<br><span class="time">18:30~</span> 入境領行李'},{lat:35.7295,lng:139.7109,title:'池袋格拉斯麗飯店',description:'<span class="time">晚上</span> 入住飯店，附近用餐或休息'}],2:[{lat:35.7022,lng:139.5701,title:'吉祥寺',description:'<span class="time">09:30</span> 從池袋出發'},{lat:35.6962,lng:139.5704,title:'三鷹之森吉卜力美術館',description:'<span class="time">10:45~13:00</span> 參觀<span class="note">須預約</span>'},{lat:35.6994,lng:139.5761,title:'井之頭恩賜公園',description:'<span class="time">13:00~14:30</span> 公園散步與午餐'},{lat:35.662,lng:139.714,title:'根津美術館',description:'<span class="time">15:00~16:30</span> 參觀美術館'}],3:[{lat:35.6764,lng:139.6993,title:'明治神宮',description:'<span class="time">09:30~11:00</span> 參拜 & 原宿散策'},{lat:35.6609,lng:139.738,title:'麻布台之丘',description:'<span class="time">14:00~17:00</span> 體驗 TeamLab Borderless<span class="note">須預約</span>'},{lat:35.6909,lng:139.7004,title:'新宿',description:'<span class="time">18:00~</span> 逛街晚餐'},{lat:35.6896,lng:139.692,title:'東京都廳展望台',description:'<span class="time">20:00~21:30</span> 欣賞免費夜景'}],4:[{lat:35.6653,lng:139.771,title:'築地場外市場',description:'<span class="time">07:30~11:30</span> 享用早餐與逛街'},{lat:35.671,lng:139.765,title:'銀座',description:'<span class="time">11:30~14:00</span> 銀座逛街與午餐'},{lat:35.2494,lng:139.0245,title:'箱根小涌園 天悠',description:'<span class="time">16:30</span> 抵達箱根，入住飯店享受溫泉'}],5:[{lat:35.2482,lng:139.0494,title:'雕刻之森美術館',description:'<span class="time">上午</span> 飯店早餐後參觀'},{lat:35.2536,lng:139.055,title:'強羅公園',description:'<span class="time">上午</span> 可選景點'},{lat:35.263,lng:139.04,title:'Pola美術館',description:'<span class="time">上午</span> 可選景點'},{lat:35.2045,lng:139.0267,title:'箱根・芦ノ湖 はなをり',description:'<span class="time">下午</span> 入住新飯店，繼續享受溫泉'}],6:[{lat:35.197,lng:139.019,title:'芦之湖',description:'<span class="time">上午</span> 飯店早餐後湖邊散策'},{lat:35.3377,lng:138.931,title:'Hotel Clad 御殿場',description:'<span class="time">中午</span> 退房後前往御殿場並入住'},{lat:35.335,lng:138.932,title:'御殿場 Premium Outlets',description:'<span class="time">下午/傍晚</span> 購物中心血拚'}],7:[{lat:35.7295,lng:139.7109,title:'池袋格拉斯麗飯店',description:'<span class="time">下午</span> 從御殿場返回東京，再次入住'},{lat:35.7289,lng:139.719,title:'池袋太陽城',description:'<span class="time">傍晚</span> 周邊輕鬆活動'}],8:[{lat:35.7148,lng:139.7967,title:'淺草寺',description:'<span class="time">09:30~11:00</span> 參拜 & 仲見世通散策'},{lat:35.7142,lng:139.7739,title:'上野公園',description:'<span class="time">11:30~13:30</span> 公園散步，自由參觀博物館或動物園'},{lat:35.659,lng:139.703,title:'Shibuya Sky (澀谷天空)',description:'<span class="time">16:00~18:00</span> 參觀與周邊逛街<span class="note">建議預約</span>'}],9:[{lat:35.6909,lng:139.7004,title:'新宿',description:'<span class="time">全日</span> 最後衝刺，逛街購物'},{lat:35.671,lng:139.765,title:'銀座',description:'<span class="time">全日</span> 品嚐美食或探索未訪店家'}],10:[{lat:35.7295,lng:139.7109,title:'池袋',description:'<span class="time">上午</span> 購買伴手禮、整理行李'},{lat:35.7733,lng:140.3864,title:'成田機場 (NRT)',description:'<span class="time">16:30</span> 從池袋出發前往機場<br><span class="time">18:10</span> 搭機返回台灣！'}]};
+        function initMap() {
+            window.gm_authFailure = () => { document.getElementById('map-error').style.display = 'block'; };
+            map = new google.maps.Map(document.getElementById('map'), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 11, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, styles: [ { "featureType": "poi.business", "stylers": [{ "visibility": "off" }] }, { "featureType": "poi.park", "elementType": "labels.text", "stylers": [{ "visibility": "off" }] } ] });
+            const daySelector = document.getElementById('day-selector');
+            const aiButton = document.getElementById('ai-planner-btn');
+            for (let day = 1; day <= 10; day++) {
+                const button = document.createElement('button');
+                button.className = 'day-btn';
+                button.textContent = `第 ${day} 天`;
+                button.dataset.day = day;
+                button.addEventListener('click', () => { displayDay(day); document.querySelectorAll('#day-selector .day-btn').forEach(btn => btn.classList.remove('active')); button.classList.add('active'); });
+                daySelector.insertBefore(button, aiButton);
+            }
+            document.getElementById('locate-me-btn').addEventListener('click', locateUser);
+            displayDay(1);
+            daySelector.querySelector('.day-btn').classList.add('active');
+            setupAiModal();
+        }
+        function displayDay(day) { currentDay = day; updateMapMarkers(day); updateItineraryText(day); }
+        function updateItineraryText(day) {
+            const titleEl = document.getElementById('day-title'); const listEl = document.getElementById('itinerary-list'); const locations = itineraryData[day];
+            titleEl.textContent = `第 ${day} 天行程`; listEl.innerHTML = '';
+            if (!locations || locations.length === 0) { listEl.innerHTML = '<li>本日無行程資料。</li>'; return; }
+            locations.forEach(location => {
+                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`;
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<div class="item-content"><div class="item-title">${location.title}</div><div class="item-desc">${location.description}</div></div><a href="${navUrl}" target="_blank" class="nav-link">導航</a>`;
+                listEl.appendChild(listItem);
+            });
+        }
+        function updateMapMarkers(day) {
+            markers.forEach(marker => marker.setMap(null)); markers = [];
+            const locations = itineraryData[day]; if (!locations || locations.length === 0) return;
+            const bounds = new google.maps.LatLngBounds(); const infoWindow = new google.maps.InfoWindow();
+            locations.forEach(location => {
+                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`;
+                const marker = new google.maps.Marker({ position: { lat: location.lat, lng: location.lng }, map: map, title: location.title, animation: google.maps.Animation.DROP });
+                markers.push(marker);
+                marker.addListener('click', () => { const content = `<strong>${location.title}</strong><br><a href="${navUrl}" target="_blank" class="info-window-nav-link">點此導航</a>`; infoWindow.setContent(content); infoWindow.open(map, marker); });
+                bounds.extend(marker.getPosition());
+            });
+            if (locations.length > 1) { map.fitBounds(bounds); } else { map.setCenter(bounds.getCenter()); map.setZoom(14); }
+        }
+        function locateUser() {
+            if (!navigator.geolocation) { alert('您的瀏覽器不支援定位功能。'); return; }
+            navigator.geolocation.getCurrentPosition(position => {
+                const userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                if (userLocationMarker) { userLocationMarker.setPosition(userPos); } else { userLocationMarker = new google.maps.Marker({ position: userPos, map: map, title: '您的位置', icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2, } }); }
+                map.setCenter(userPos); map.setZoom(15);
+            }, () => { alert('無法取得您的位置。請確認您已授權瀏覽器讀取位置資訊。'); });
+        }
+        function setupAiModal() {
+            const aiButton = document.getElementById('ai-planner-btn'); const modal = document.getElementById('ai-modal'); const closeBtn = document.getElementById('modal-close-btn');
+            aiButton.addEventListener('click', getAiSuggestions);
+            closeBtn.addEventListener('click', () => modal.classList.remove('show'));
+            modal.addEventListener('click', (e) => { if (e.target === modal) { modal.classList.remove('show'); } });
+        }
+        async function getAiSuggestions() {
+            const modal = document.getElementById('ai-modal'); const modalBody = document.getElementById('ai-modal-body');
+            modal.classList.add('show'); modalBody.innerHTML = '<div class="spinner"></div>';
+            const dayLocations = itineraryData[currentDay];
+            if (!dayLocations) { modalBody.innerHTML = '<p>當前日期沒有行程資料。</p>'; return; }
+            const itineraryList = dayLocations.map(loc => `- ${loc.title}`).join('\n');
+            const prompt = `你是一位專業的日本旅遊專家。我正在規劃2025年的東京自由行。這是第 ${currentDay} 天的行程：\n${itineraryList}\n\n請根據以上行程，用繁體中文提供以下建議，並使用 Markdown 格式化你的回答：\n\n### 🍽️ 美食推薦\n根據當天的地點和時間，推薦一家適合的午餐或晚餐餐廳。請說明推薦理由和大概的價位。\n\n### ✨ 潛力景點\n在行程附近，推薦一個額外的小景點或有趣的店家，讓行程更豐富。請說明它為何值得探訪。\n\n### 💡 趣味小知識\n挑選當天行程中的一個主要景點，分享一個觀光客可能不知道的有趣小知識或歷史故事。\n\n請確保你的回答簡潔、實用且吸引人。`;
+
+            // *** 這是呼叫 Vercel 後端的關鍵修改 ***
+            try {
+                const response = await fetch('/api/getAiSuggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                if (!response.ok) { throw new Error(`伺服器錯誤: ${response.status}`); }
+                const result = await response.json();
+                if (result.error) { throw new Error(result.error); }
+                const htmlResponse = result.text.replace(/### (.*)/g, '<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                modalBody.innerHTML = htmlResponse;
+            } catch (error) {
+                console.error("AI 建議功能錯誤:", error);
+                modalBody.innerHTML = `<p style="color: red;">抱歉，AI 建議功能暫時無法使用。<br><small>錯誤訊息: ${error.message}</small></p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
