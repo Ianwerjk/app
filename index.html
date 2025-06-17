@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -56,7 +55,7 @@
     </div>
     <div id="ai-modal" class="modal-overlay">
         <div class="modal-content">
-            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <button id="modal-close-btn" class="modal-close-btn">×</button>
             <h2>✨ AI 旅遊規劃師建議</h2>
             <div id="ai-modal-body"></div>
         </div>
@@ -65,7 +64,53 @@
     <script>
         // 全域變數
         let map; let markers = []; let userLocationMarker = null; let currentDay = 1;
-        const itineraryData = { 1:[{lat:35.7733,lng:140.3864,title:'成田機場 (NRT)',description:'<span class="time">17:05</span> 抵達東京！<br><span class="time">18:30~</span> 入境領行李'},{lat:35.7295,lng:139.7109,title:'池袋格拉斯麗飯店',description:'<span class="time">晚上</span> 入住飯店，附近用餐或休息'}],2:[{lat:35.7022,lng:139.5701,title:'吉祥寺',description:'<span class="time">09:30</span> 從池袋出發'},{lat:35.6962,lng:139.5704,title:'三鷹之森吉卜力美術館',description:'<span class="time">10:45~13:00</span> 參觀<span class="note">須預約</span>'},{lat:35.6994,lng:139.5761,title:'井之頭恩賜公園',description:'<span class="time">13:00~14:30</span> 公園散步與午餐'},{lat:35.662,lng:139.714,title:'根津美術館',description:'<span class="time">15:00~16:30</span> 參觀美術館'}],3:[{lat:35.6764,lng:139.6993,title:'明治神宮',description:'<span class="time">09:30~11:00</span> 參拜 & 原宿散策'},{lat:35.6609,lng:139.738,title:'麻布台之丘',description:'<span class="time">14:00~17:00</span> 體驗 TeamLab Borderless<span class="note">須預約</span>'},{lat:35.6909,lng:139.7004,title:'新宿',description:'<span class="time">18:00~</span> 逛街晚餐'},{lat:35.6896,lng:139.692,title:'東京都廳展望台',description:'<span class="time">20:00~21:30</span> 欣賞免費夜景'}],4:[{lat:35.6653,lng:139.771,title:'築地場外市場',description:'<span class="time">07:30~11:30</span> 享用早餐與逛街'},{lat:35.671,lng:139.765,title:'銀座',description:'<span class="time">11:30~14:00</span> 銀座逛街與午餐'},{lat:35.2494,lng:139.0245,title:'箱根小涌園 天悠',description:'<span class="time">16:30</span> 抵達箱根，入住飯店享受溫泉'}],5:[{lat:35.2482,lng:139.0494,title:'雕刻之森美術館',description:'<span class="time">上午</span> 飯店早餐後參觀'},{lat:35.2536,lng:139.055,title:'強羅公園',description:'<span class="time">上午</span> 可選景點'},{lat:35.263,lng:139.04,title:'Pola美術館',description:'<span class="time">上午</span> 可選景點'},{lat:35.2045,lng:139.0267,title:'箱根・芦ノ湖 はなをり',description:'<span class="time">下午</span> 入住新飯店，繼續享受溫泉'}],6:[{lat:35.197,lng:139.019,title:'芦之湖',description:'<span class="time">上午</span> 飯店早餐後湖邊散策'},{lat:35.3377,lng:138.931,title:'Hotel Clad 御殿場',description:'<span class="time">中午</span> 退房後前往御殿場並入住'},{lat:35.335,lng:138.932,title:'御殿場 Premium Outlets',description:'<span class="time">下午/傍晚</span> 購物中心血拚'}],7:[{lat:35.7295,lng:139.7109,title:'池袋格拉斯麗飯店',description:'<span class="time">下午</span> 從御殿場返回東京，再次入住'},{lat:35.7289,lng:139.719,title:'池袋太陽城',description:'<span class="time">傍晚</span> 周邊輕鬆活動'}],8:[{lat:35.7148,lng:139.7967,title:'淺草寺',description:'<span class="time">09:30~11:00</span> 參拜 & 仲見世通散策'},{lat:35.7142,lng:139.7739,title:'上野公園',description:'<span class="time">11:30~13:30</span> 公園散步，自由參觀博物館或動物園'},{lat:35.659,lng:139.703,title:'Shibuya Sky (澀谷天空)',description:'<span class="time">16:00~18:00</span> 參觀與周邊逛街<span class="note">建議預約</span>'}],9:[{lat:35.6909,lng:139.7004,title:'新宿',description:'<span class="time">全日</span> 最後衝刺，逛街購物'},{lat:35.671,lng:139.765,title:'銀座',description:'<span class="time">全日</span> 品嚐美食或探索未訪店家'}],10:[{lat:35.7295,lng:139.7109,title:'池袋',description:'<span class="time">上午</span> 購買伴手禮、整理行李'},{lat:35.7733,lng:140.3864,title:'成田機場 (NRT)',description:'<span class="time">16:30</span> 從池袋出發前往機場<br><span class="time">18:10</span> 搭機返回台灣！'}]};
+        const itineraryData = {
+            1: [ // 9/16 (Tue)
+                { lat: 35.7653, lng: 140.3856, title: '成田機場 (NRT)', description: '<span class="time">17:05</span> 抵達 T2，搭乘利木津巴士或 N’EX 前往池袋' },
+                { lat: 35.7295, lng: 139.7109, title: '東京大都會飯店', description: '<span class="time">晚上</span> 入住飯店，附近用餐休息' }
+            ],
+            2: [ // 9/17 (Wed)
+                { lat: 35.6761, lng: 139.6992, title: '明治神宮', description: '參拜、表參道簡單散步' },
+                { lat: 35.6909, lng: 139.7004, title: '新宿', description: '伊勢丹、Odakyu 逛街購物<br><span class="note">★ 表參道可跳過直接來此</span>' },
+                { lat: 35.6895, lng: 139.6917, title: '東京都廳展望台', description: '欣賞免費夜景' }
+            ],
+            3: [ // 9/18 (Thu)
+                { lat: 35.2541, lng: 139.0537, title: '箱根湯本', description: '<span class="time">10:40</span> 搭浪漫特快，中午抵達' },
+                { lat: 35.2508, lng: 139.0483, title: '雪月花別邸 翠雲', description: '從強羅站轉乘後入住，自由活動或泡湯休息' }
+            ],
+            4: [ // 9/19 (Fri)
+                { lat: 35.2482, lng: 139.0494, title: '雕刻之森美術館', description: '<span class="time">上午</span> 參觀' },
+                { lat: 35.2443, lng: 139.0199, title: '大湧谷', description: '<span class="time">下午</span> 搭纜車觀景' },
+                { lat: 35.2494, lng: 139.0245, title: '箱根小涌園 天悠', description: '入住飯店<br><span class="note">★ 天氣不佳可直接來此</span>' }
+            ],
+            5: [ // 9/20 (Sat)
+                { lat: 35.2097, lng: 139.0044, title: '芦之湖', description: '<span class="time">上午</span> 遊船' },
+                { lat: 35.2045, lng: 139.0267, title: '箱根神社', description: '參拜<br><span class="note">★ 腳力疲累可略過</span>' },
+                { lat: 35.3083, lng: 138.9639, title: '御殿場 Premium Outlets', description: '<span class="time">下午</span> 購物' },
+                { lat: 35.3100, lng: 138.9650, title: 'Hotel Clad 御殿場', description: '入住飯店' }
+            ],
+            6: [ // 9/21 (Sun)
+                { lat: 35.3083, lng: 138.9639, title: '御殿場 Premium Outlets', description: '<span class="time">上午</span> 最後採買' },
+                { lat: 35.7295, lng: 139.7109, title: '東京大都會飯店', description: '<span class="time">下午</span> 搭高速巴士返回東京，再次入住' }
+            ],
+            7: [ // 9/22 (Mon)
+                { lat: 35.7125, lng: 139.7711, title: '上野公園', description: '<span class="time">上午</span> 散步' },
+                { lat: 35.7188, lng: 139.7765, title: '東京國立博物館', description: '<span class="time">上午</span> 參觀 (可輪椅)' },
+                { lat: 35.7147, lng: 139.7968, title: '淺草寺', description: '<span class="time">下午</span> 參拜 & 仲見世通商店街散策' }
+            ],
+            8: [ // 9/23 (Tue)
+                { lat: 35.7295, lng: 139.7109, title: '池袋', description: '<span class="time">上午</span> 自由活動或休息' },
+                { lat: 35.6608, lng: 139.7406, title: '麻布台之丘 (TeamLab Borderless)', description: '<span class="time">傍晚</span> 建議17:30入場' }
+            ],
+            9: [ // 9/24 (Wed)
+                { lat: 35.6649, lng: 139.7669, title: '築地場外市場', description: '<span class="time">上午</span> 吃海鮮、伴手禮採買' },
+                { lat: 35.6711, lng: 139.7650, title: '銀座', description: '<span class="time">下午</span> 百貨、UNIQLO 旗艦店等購物<br><span class="note">★ 可改在池袋百貨購物</span>' }
+            ],
+            10: [ // 9/25 (Thu)
+                { lat: 35.7295, lng: 139.7109, title: '池袋', description: '<span class="time">上午</span> 補買伴手禮或飯店休息' },
+                { lat: 35.7653, lng: 140.3856, title: '成田機場 (NRT)', description: '<span class="time">下午</span> 前往機場<br><span class="time">18:10</span> 搭機返回台灣' }
+            ]
+        };
         function initMap() {
             window.gm_authFailure = () => { document.getElementById('map-error').style.display = 'block'; };
             map = new google.maps.Map(document.getElementById('map'), { center: { lat: 35.6895, lng: 139.6917 }, zoom: 11, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, styles: [ { "featureType": "poi.business", "stylers": [{ "visibility": "off" }] }, { "featureType": "poi.park", "elementType": "labels.text", "stylers": [{ "visibility": "off" }] } ] });
@@ -100,14 +145,14 @@
             markers.forEach(marker => marker.setMap(null)); markers = [];
             const locations = itineraryData[day]; if (!locations || locations.length === 0) return;
             const bounds = new google.maps.LatLngBounds(); const infoWindow = new google.maps.InfoWindow();
-            locations.forEach(location => {
+            locations.forEach((location, index) => {
                 const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`;
-                const marker = new google.maps.Marker({ position: { lat: location.lat, lng: location.lng }, map: map, title: location.title, animation: google.maps.Animation.DROP });
+                const marker = new google.maps.Marker({ position: { lat: location.lat, lng: location.lng }, map: map, title: location.title, animation: google.maps.Animation.DROP, label: `${index + 1}` });
                 markers.push(marker);
-                marker.addListener('click', () => { const content = `<strong>${location.title}</strong><br><a href="${navUrl}" target="_blank" class="info-window-nav-link">點此導航</a>`; infoWindow.setContent(content); infoWindow.open(map, marker); });
+                marker.addListener('click', () => { const content = `<strong>${location.title}</strong><br>${location.description}<br><a href="${navUrl}" target="_blank" class="info-window-nav-link">點此導航</a>`; infoWindow.setContent(content); infoWindow.open(map, marker); });
                 bounds.extend(marker.getPosition());
             });
-            if (locations.length > 1) { map.fitBounds(bounds); } else { map.setCenter(bounds.getCenter()); map.setZoom(14); }
+            if (locations.length > 1) { map.fitBounds(bounds); } else if (locations.length === 1) { map.setCenter(bounds.getCenter()); map.setZoom(14); }
         }
         function locateUser() {
             if (!navigator.geolocation) { alert('您的瀏覽器不支援定位功能。'); return; }
@@ -151,4 +196,3 @@
     </script>
 </body>
 </html>
-
